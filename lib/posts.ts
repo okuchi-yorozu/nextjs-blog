@@ -3,28 +3,38 @@ import path from 'path'
 import matter from 'gray-matter'
 import { remark } from 'remark'
 import html from 'remark-html'
+import { Post } from '../pages'
 
 const postsDirectory = path.join(process.cwd(), 'posts')
 
-export function getSortedPostsData() {
+export const getSortedPostsData: () => Post[] = () => {
   // Get file names under /posts
-  const fileNames = fs.readdirSync(postsDirectory)
-  const allPostsData = fileNames.map(fileName => {
+  const fileNames: string[] = fs.readdirSync(postsDirectory)
+  const allPostsData: Post[] = fileNames.map(fileName => {
     // Remove ".md" from file name to get id
-    const id = fileName.replace(/\.md$/, '')
+    const id: string = fileName.replace(/\.md$/, '')
 
     // Read markdown file as string
-    const fullPath = path.join(postsDirectory, fileName)
-    const fileContents = fs.readFileSync(fullPath, 'utf8')
+    const fullPath: string = path.join(postsDirectory, fileName)
+    const fileContents: string = fs.readFileSync(fullPath, 'utf8')
 
     // Use gray-matter to parse the post metadata section
-    const matterResult = matter(fileContents)
-
+    const matterResult: matter.GrayMatterFile<string> = matter(fileContents)
     // Combine the data with the id
-    return {
-      id,
-      ...matterResult.data
+    const toPost = (id: string, r: matter.GrayMatterFile<string>) => {
+      if (typeof r.data.date === 'string' && typeof r.data.title === 'string') {
+        return {
+          id,
+          date: r.data.date,
+          title: r.data.title,
+        }
+      } else {
+        throw new Error()
+      }
     }
+    const post: Post = toPost(id, matterResult)
+
+    return post
   })
   // Sort posts by date
   return allPostsData.sort((a, b) => {
